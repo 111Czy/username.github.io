@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互动课堂</title>
+    <style>
+       body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+       
+       .container {
+            display: flex;
+            min-height: 100vh;  /* 改为 min-height 确保内容不足时也能撑满视口 */
+            height: 100vh;      /* 保持视口高度 */
+            overflow: hidden;   /* 隐藏滚动条保持布局稳定 */
+        }
+       
+       .left-column {
+            width: 220px;  /* 原200px */
+            background-color: #007BFF;
+            color: white;
+            padding: 15px; /* 原20px */
+        }
+       
+       .user-info {
+            text-align: center;
+            margin-bottom: 20px;
+			font-size: 20px
+        }
+       
+       .user-info img {
+            width: 60px;   /* 原80px */
+            height: 60px;  /* 原80px */
+            border-radius: 50%;
+        }
+       
+       .function-list {
+            list-style: none;
+            padding: 0;
+        }
+       
+       .function-list li {
+            padding: 8px 0; /* 原10px 0 */
+            font-size: 20px; /* 新增字体调整 */
+        }
+       
+       .function-list li:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+       
+       .main-content {
+            flex-grow: 1;
+            background-color: #f9f9f9;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+       
+       .top-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007BFF;
+            font-size: 28px;
+        }
+       
+       .video-container {
+            flex: 1;
+            background: #f0f0f0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+       
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+       
+       .chat-container {
+            width: 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+       
+       .container-inner {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+       
+        #chat-box {
+            flex: 1;
+            max-height: 60vh;  /* 改为视口百分比单位 */
+            min-height: 200px;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+       
+       .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            width: 100%;  /* 新增宽度限制 */
+        }
+       
+        input {
+            flex: 4;       /* 调整比例分配 */
+            padding: 15px 20px;
+            min-width: 60px;  /* 新增最小宽度 */
+        }
+       
+        button {
+            flex: 1;
+            padding: 12px 16px;  /* 减小左右padding */
+            min-width: 80px;     /* 设置最小宽度 */
+            white-space: nowrap; /* 防止文字换行 */
+        }
+       
+        input {
+            flex: 3;
+            padding: 15px 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 16px;
+        }
+       
+        button {
+            flex: 1;
+            padding: 15px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+       
+        button:hover {
+            transform: scale(1.03);
+        }
+       
+       .message {
+            margin: 10px 0;
+            padding: 12px 15px;
+            border-radius: 10px;
+            line-height: 1.5;
+            word-break: break-word;  /* 新增换行规则 */
+            white-space: pre-wrap;    /* 保留换行但自动换行 */
+        }
+       
+       .user-message {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            max-width: 80%;
+        }
+       
+       .bot-message {
+            background-color: #f5f5f5;
+            max-width: 80%;
+        }
+       
+       .loading {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            margin: 15px 0;
+        }
+       
+        /* 新增图片展示区域样式 */
+       .exercise-images {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 11;
+            transition: opacity 0.3s ease;
+        }
+       
+       .exercise-images.active {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            opacity: 1;
+        }
+       
+       .exercise-images img {
+            max-width: 45%;
+            max-height: 80%;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+       
+       .close-exercises {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+       
+       .close-exercises:hover {
+            background-color: #ff0000;
+        }
+       
+        /* 新增答题工具盒子样式 */
+       .answer-tools {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 12;
+            transition: opacity 0.3s ease;
+        }
+       
+       .answer-tools.active {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            opacity: 1;
+        }
+       
+       .answer-box {
+            width: 200px;
+            height: 200px;
+            background-color: #007BFF;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+       
+       .answer-box:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+       
+       .close-answer-tools {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+       
+       .close-answer-tools:hover {
+            background-color: #ff0000;
+        }
+
+        /* 新增Pdf展示区域样式 */
+       .ppt-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 13;
+            transition: opacity 0.3s ease;
+        }
+
+       .ppt-container.active {
+            display: block;
+            opacity: 1;
+        }
+
+       .ppt-container embed {
+            width: 100%;
+            height: 100%;
+        }
+
+       .close-ppt {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+       .close-ppt:hover {
+            background-color: #ff0000;
+        }
+
+       .download-ppt {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+       .download-ppt:hover {
+            background-color: #0056b3;
+        }
+
+        /* 笔记记录区域样式 */
+       .note-container {
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+       .note-container textarea {
+            width: 100%;
+            height: 150px;
+            border: none;
+            resize: none;
+            font-size: 16px;
+        }
+
+        /* 新增课堂记录覆盖层样式 */
+        .record-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 14;
+            overflow-y: auto;
+        }
+
+        .record-overlay.active {
+            display: block;
+        }
+
+        /* 统计信息样式 */
+        .stats-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-header {
+            text-align: center;
+            font-size: 20px;
+            color: #007BFF;
+            margin-bottom: 15px;
+        }
+
+        .stats-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #007BFF;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .close-record {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        /* 新增推荐算法面板样式 */
+        .algorithm-panel {
+          display: none;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(255, 255, 255, 0.95);
+          padding: 30px 50px;
+          border-radius: 15px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+          z-index: 15;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .algorithm-panel.active {
+            display: flex;
+        }
+
+        .algorithm-box {
+            padding: 20px 30px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .algorithm-box:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .close-algorithm {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        /* 新增切换按钮样式 */
+.toggle-button {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    align-self: center;
+    width: fit-content; /* 使按钮宽度适应内容 */
+    display: block; /* 确保按钮独占一行 */
+    margin-left: auto; /* 水平居中 */
+    margin-right: auto;
+}
+
+.toggle-button:hover {
+    transform: scale(1.03);
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            },
+            svg: {
+                fontCache: 'global'
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 左侧功能栏 -->
+        <div class="left-column">
+            <div class="user-info">
+                <img src="./交互网页课堂素材/user.jpg" alt="用户头像">
+                <p>协同过滤算法</p>
+            </div>
+            <ul class="function-list">
+                <li id="record-btn">课堂记录</li>
+				<br>
+                <li id="other-algorithms-btn">其他推荐算法</li>
+				<br>
+                <li id="exercise-btn">练习题</li>
+				<br>
+                <li id="answer-tools-btn">软件下载</li>
+				<br>
+                <li id="ppt-btn">课程PDF</li>
+                <br>
+                <li id="yuce" onclick="openRecommendationPage()">物品推荐</li>
+                <br>
+                <li id="code-btn" onclick="openCodePage()">算法代码</li>
+            </ul>
+        </div>
+        <!-- 中间主内容区域 -->
+        <div class="main-content">
+            <h2 class="top-title">互动课堂</h2>
+            <div class="video-container">
+                <video controls autoplay muted playsinline>
+                    <source src="./交互网页课堂素材/视频.mp4" type="video/mp4">
+                    你的浏览器不支持视频播放
+                </video>
+                <!-- 新增图片展示区域 -->
+                <div class="exercise-images" id="exercise-images">
+                    <button class="close-exercises" id="close-exercises">×</button>
+                    <img src="./交互网页课堂素材/百度网盘.jpg" alt="练习题1">
+                    <img src="./交互网页课堂素材/二维码.jpg" alt="练习题2">
+                </div>
+                <!-- 新增答题工具盒子 -->
+                <div class="answer-tools" id="answer-tools">
+                    <button class="close-answer-tools" id="close-answer-tools">×</button>
+                    <div class="answer-box" id="baidu-box">百度网盘</div>
+                    <div class="answer-box" id="wechat-box">微信官网</div>
+                </div>
+                <!-- 新增PDF展示区域 -->
+                <div class="ppt-container" id="ppt-container">
+                    <button class="close-ppt" id="close-ppt">×</button>
+                    <button class="download-ppt" id="download-ppt">下载PDF</button>
+                    <!-- 请替换为你的本地PDF文件路径 -->
+                    <embed src="./交互网页课堂素材/基于用户的协同过滤算法.pdf" type="application/pdf">
+                </div>
+                <!-- 新增课堂记录面板 -->
+                <div class="record-overlay" id="record-overlay">
+                    <button class="close-record" id="close-record">×</button>
+                    <div class="stats-panel">
+                        <div class="stats-header">课堂暂停记录</div>
+                        <div class="stats-content">
+                            <div class="stat-item">
+                                <div class="./交互网页课堂素材/基于用户的协同过滤算法.pdf"="stat-label">总暂停次数</div>
+                                <div class="stat-value" id="total-pauses">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">最近暂停时间</div>
+                                <div class="stat-value" id="last-pause-time">00:00</div>
+                            </div>
+                            <!-- 新增暂停记录列表 -->
+                            <div class="pause-records" style="grid-column: 1 / -1; margin-top: 15px;">
+                                <div class="stat-label" style="margin-bottom: 10px;">详细暂停记录</div>
+                                <div id="pause-list" style="max-height: 300px; overflow-y: auto;">
+                                        <!-- 记录条目将通过JS动态插入 -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <button class="toggle-button" id="toggle-button">切换</button>
+                     <!-- 新增记录区域显示部分 -->
+                    <div id="record-areas-section" style="display: none;">
+                        <h3>各区域暂停次数</h3>
+                        <ul id="area-pause-counts"></ul>
+                        <h3>学生疑似未理解内容</h3>
+                        <p id="difficult-point"></p>
+                    </div>
+                </div>
+                <!-- 推荐算法面板 -->
+                <div class="algorithm-panel" id="algorithm-panel">
+                    <button class="close-algorithm" id="close-algorithm">×</button>
+                    <button class="algorithm-box" onclick="window.open('https://b23.tv/2WiqPxl', '_blank')">
+                        基于关联规则的推荐算法
+                    </button>
+                    <button class="algorithm-box" onclick="window.open('https://b23.tv/PDNZRo1', '_blank')">
+                        混合推荐算法
+                    </button>
+                </div>
+            </div>
+            <!-- 新增笔记记录区域 -->
+            <div class="note-container">
+                <textarea placeholder="在这里记录笔记..."></textarea>
+            </div>
+        </div>
+        <!-- 右侧答疑区域 -->
+        <div class="chat-container">
+            <div class="container-inner">
+                <h1 style="text-align: center; margin-bottom: 15px;">答疑小助手</h1>
+                <div id="chat-box"></div>
+                <div class="input-group">
+                    <input type="text" id="user-input" placeholder="请问你的问题是？" autocomplete="off"
+                        onkeypress="handleKeyPress(event)">
+                    <button onclick="sendMessage()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置 marked 避免转义 LaTeX
+        marked.setOptions({
+            breaks: true,
+            sanitize: false,
+            smartypants: false
+        });
+        
+        const API_KEY = ''; // 替换为你的API密钥
+        const API_URL = '';
+
+        // 通用的显示函数
+        function showSection(sectionId) {
+            const sections = ['exercise-images', 'answer-tools', 'ppt-container'];
+            sections.forEach(id => {
+                const section = document.getElementById(id);
+                if (id === sectionId) {
+                    section.classList.add('active');
+                    const video = document.querySelector('video');
+                    video.pause();
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+        }
+
+        // 练习题按钮点击事件
+        document.getElementById('exercise-btn').addEventListener('click', function () {
+            showSection('exercise-images');
+        });
+
+        // 关闭练习题按钮点击事件
+        document.getElementById('close-exercises').addEventListener('click', function () {
+            const exerciseImages = document.getElementById('exercise-images');
+            exerciseImages.classList.remove('active');
+            const video = document.querySelector('video');
+            video.play();
+        });
+
+        // 答题工具按钮点击事件
+        document.getElementById('answer-tools-btn').addEventListener('click', function () {
+            showSection('answer-tools');
+        });
+
+        // 关闭答题工具按钮点击事件
+        document.getElementById('close-answer-tools').addEventListener('click', function () {
+            const answerTools = document.getElementById('answer-tools');
+            answerTools.classList.remove('active');
+            const video = document.querySelector('video');
+            video.play();
+        });
+
+        // 课程PDF按钮点击事件
+        document.getElementById('ppt-btn').addEventListener('click', function () {
+            showSection('ppt-container');
+        });
+
+        // 关闭PDF按钮点击事件
+        document.getElementById('close-ppt').addEventListener('click', function () {
+            const pptContainer = document.getElementById('ppt-container');
+            pptContainer.classList.remove('active');
+            const video = document.querySelector('video');
+            video.play();
+        });
+
+        // 百度网盘盒子点击事件
+        document.getElementById('baidu-box').addEventListener('click', function () {
+            window.open('https://pan.baidu.com/', '_blank');
+        });
+
+        // 微信官网盒子点击事件
+        document.getElementById('wechat-box').addEventListener('click', function () {
+            window.open('https://weixin.qq.com/', '_blank');
+        });
+
+        // 下载PDF按钮点击事件
+        document.getElementById('download-ppt').addEventListener('click', function () {
+            // 请替换为你的本地PDF文件路径
+            const pdfUrl = "./新建文件夹/基于用户的协同过滤算法.pdf";
+            const a = document.createElement('a');
+            a.href = pdfUrl;
+            a.download = 'pdf.pdf';
+            a.click();
+        });
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-box');
+            const message = userInput.value.trim();
+
+            if (!message) return;
+
+            userInput.value = '';
+            addMessage(message, 'user');
+            const loading = addLoading();
+            const botMessageDiv = addMessage('', 'bot');
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "请确保所有数学公式用 $...$ 或 $$...$$ 包裹。"
+                            },
+                            {
+                                role: "user",
+                                content: message
+                            }
+                        ],
+                        temperature: 0.7,
+                        stream: true
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let fullReply = '';
+        
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+        
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n').filter(line => line.trim()!== '');
+        
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            const data = line.slice(5).trim();
+                            if (data === '[DONE]') continue;
+        
+                            try {
+                                const jsonData = JSON.parse(data);
+                                const delta = jsonData.choices[0].delta?.content;
+                                if (delta) {
+                                    fullReply += delta;
+                                    const parsedHTML = marked.parse(fullReply);
+                                    botMessageDiv.innerHTML = parsedHTML;
+                                    await MathJax.typesetPromise([botMessageDiv]);
+                                    scrollToBottom();
+                                }
+                            } catch (parseError) {
+                                console.error('解析流式数据时出错:', parseError);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                addMessage(`错误：${error.message}`, 'error');
+            } finally {
+                chatBox.removeChild(loading);
+                scrollToBottom();
+            }
+        }
+        
+        function addMessage(content, type = 'bot') {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = content;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return messageDiv;
+        }
+
+        function addLoading() {
+            const chatBox = document.getElementById('chat-box');
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.textContent = '正在思考...';
+            chatBox.appendChild(loading);
+            return loading;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' &&!event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        // 初始加载时测试
+        window.addEventListener('DOMContentLoaded', () => {
+            addMessage('欢迎使用答疑小助手！输入问题后，我会尽力帮您解答。', 'bot');
+            // addMessage('测试公式渲染：$$\\sum_{i=1}^n a_i$$', 'bot');
+        });
+        
+        // 新增课堂记录功能
+        let pauseCount = 0;
+        let lastPauseTime = '00:00';
+        const videoElement = document.querySelector('video');
+
+        // 更新显示函数
+        function showSection(sectionId) {
+            const sections = ['exercise-images', 'answer-tools', 'ppt-container', 'record-overlay','algorithm-panel'];
+            sections.forEach(id => {
+                const section = document.getElementById(id);
+                if (id === sectionId) {
+                    section.classList.add('active');
+                    videoElement.pause();
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+        }
+
+        // 课堂记录按钮点击事件
+        document.getElementById('record-btn').addEventListener('click', () => showSection('record-overlay'));
+
+        // 关闭记录面板
+        document.getElementById('close-record').addEventListener('click', () => {
+            document.getElementById('record-overlay').classList.remove('active');
+            videoElement.play();
+        });
+
+        // 监听视频暂停事件
+        videoElement.addEventListener('pause', () => {
+            pauseCount++;
+            const currentTime = formatTime(videoElement.currentTime);
+            lastPauseTime = `${formatDateTime(new Date())} (${currentTime})`;
+            
+            // 更新显示
+            document.getElementById('total-pauses').textContent = pauseCount;
+            document.getElementById('last-pause-time').textContent = lastPauseTime;
+        });
+
+        // 时间格式化函数
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatDateTime(date) {
+            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+        }
+
+        // 在JavaScript部分添加以下代码
+        let pauseRecords = []; // 存储所有暂停记录的数组
+
+        // 监听视频暂停事件
+        videoElement.addEventListener('pause', () => {
+            const record = {
+                timestamp: new Date(),
+                videoTime: videoElement.currentTime,
+                count: pauseCount + 1
+            };
+        
+            pauseRecords.push(record);
+            pauseCount++;
+            
+            // 更新显示
+            updatePauseDisplay(record);
+            updatePauseList();
+        });
+
+        // 更新统计显示
+        function updatePauseDisplay(record) {
+            document.getElementById('total-pauses').textContent = pauseCount;
+            document.getElementById('last-pause-time').textContent = 
+                `${formatDateTime(record.timestamp)} (${formatTime(record.videoTime)})`;
+        }
+
+        // 更新记录列表
+        function updatePauseList() {
+            const listContainer = document.getElementById('pause-list');
+            listContainer.innerHTML = pauseRecords.map((record, index) => `
+                <div class="record-item" style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>#${index + 1}</span>
+                        <span>${formatDateTime(record.timestamp)}</span>
+                    </div>
+                    <div style="color: #666; margin-top: 5px;">
+                        视频时间：${formatTime(record.videoTime)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 增强时间格式化函数
+        function formatDateTime(date) {
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} 
+            ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}:${date.getSeconds().toString().padStart(2,'0')}`;
+        }
+
+        // 其他推荐算法按钮点击事件
+        document.getElementById('other-algorithms-btn').addEventListener('click', function() {
+            showSection('algorithm-panel');
+        });
+
+        // 关闭算法面板
+        document.getElementById('close-algorithm').addEventListener('click', function() {
+            document.getElementById('algorithm-panel').classList.remove('active');
+            document.querySelector('video').play();
+        });
+
+        // 获取元素
+        const toggleButton = document.getElementById('toggle-button');
+        const recordAreasSection = document.getElementById('record-areas-section');
+        const statsPanel = document.querySelector('.stats-panel');
+        const video = document.querySelector('video');
+        const areaPauseCounts = document.getElementById('area-pause-counts');
+        const difficultPoint = document.getElementById('difficult-point');
+
+        // 定义记录区域和重难点
+        const recordAreas = [
+            { start: 2 * 60 + 18, end: 2 * 60 + 49, count: 0, difficulty: '算法第一步：收集物品并给物品打分，将人物和对物品的评分形成表格' },
+            { start: 2 * 60 + 49, end: 4 * 60 + 53, count: 0, difficulty: '算法第二步：寻找相似用户谁是兴趣好友，计算余弦相似度和皮尔逊相关系数，这里没听懂可以再回去听一遍哦' },
+            { start: 4 * 60 + 53, end: 6 * 60 + 01, count: 0, difficulty: '算法第三步：推荐物品，补全你的心愿单，寻找k个用户，利用加权评分进行评分计算，评分由高到低排序再进行计算得到预测评分，进行推荐' },
+            { start: 6 * 60 + 01, end: 8 * 60 + 31, count: 0, difficulty: '算法代码讲解：代码讲解，可以下载网站内的代码，结合视频讲解和AI助手进行理解哦' }
+        ];
+
+        // 监听视频暂停事件
+video.addEventListener('pause', () => {
+    const currentTime = video.currentTime;
+    recordAreas.forEach(area => {
+        if (currentTime >= area.start && currentTime < area.end) {
+            area.count++;
+        }
+    });
+});
+
+// 切换按钮点击事件
+toggleButton.addEventListener('click', () => {
+    if (recordAreasSection.style.display === 'none') {
+        // 显示记录区域信息
+        recordAreasSection.style.display = 'block';
+        statsPanel.style.display = 'none';
+        toggleButton.textContent = '返回课堂暂停记录页面';
+
+        // 显示各区域暂停次数
+        areaPauseCounts.innerHTML = '';
+        recordAreas.forEach(area => {
+            const li = document.createElement('li');
+            li.textContent = `区域：${formatTime(area.start)} - ${formatTime(area.end)}，暂停次数：${area.count}`;
+            areaPauseCounts.appendChild(li);
+        });
+
+        // 找出暂停次数最多的区域
+        let maxCount = 0;
+        let maxArea = null;
+        recordAreas.forEach(area => {
+            if (area.count > maxCount) {
+                maxCount = area.count;
+                maxArea = area;
+            }
+        });
+
+        // 显示重难点
+        if (maxArea) {
+            difficultPoint.textContent = maxArea.difficulty;
+        } else {
+            difficultPoint.textContent = '学生无明显疑惑';
+        }
+    } else {
+        // 回到课堂暂停记录页面
+        recordAreasSection.style.display = 'none';
+        statsPanel.style.display = 'block';
+        toggleButton.textContent = '切换';
+    }
+});
+
+// 格式化时间函数
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+        //跳转物品推荐页面
+        function openRecommendationPage() {
+                    window.location.href = 'jisuan.html';
+                }
+        
+        // 新增打开代码页面的函数
+        function openCodePage() {
+            window.open('code.html', '_blank');
+        }
+        
+    </script>
+</body>
+
+</html>    

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- 设置字符编码为 UTF-8 -->
+    <meta charset="UTF-8">
+    <!-- 设置视口，确保页面在不同设备上正常显示 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 设置页面标题 -->
+    <title>基于用户的协同过滤推荐</title>
+    <!-- 引入 Tailwind CSS 框架 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 设置表格边框合并 */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        /* 设置表格表头和单元格的边框、内边距和文本对齐方式 */
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        /* 设置表格表头的背景颜色 */
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* 移除数字输入框的上下箭头 */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* 为计算步骤添加间距和样式 */
+        pre {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body class="p-8">
+    <!-- 页面标题 -->
+    <h1 class="text-2xl font-bold mb-4">基于用户的协同过滤推荐</h1>
+    <!-- 输入表单 -->
+    <form id="inputForm">
+        <!-- 样本人数输入框 -->
+        <div class="mb-4">
+            <label for="numPeople" class="block text-sm font-medium text-gray-700">样本人数:</label>
+            <input type="number" id="numPeople"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                min="1" required>
+        </div>
+        <!-- 物品数量输入框 -->
+        <div class="mb-4">
+            <label for="numItems" class="block text-sm font-medium text-gray-700">物品数量:</label>
+            <input type="number" id="numItems"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                min="1" required>
+        </div>
+        <!-- 生成表格按钮 -->
+        <button type="button" onclick="generateTable()"
+            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            生成表格
+        </button>
+        <!-- 评分表格容器 -->
+        <div id="ratingTable" class="mt-4"></div>
+        <!-- 推荐物品数量输入框 -->
+        <div class="mb-4">
+            <label for="numRecommendations" class="block text-sm font-medium text-gray-700">推荐物品数量:</label>
+            <input type="number" id="numRecommendations"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                min="1" required>
+        </div>
+        <!-- 预测人员姓名输入框 -->
+        <div class="mb-4">
+            <label for="predictPerson" class="block text-sm font-medium text-gray-700">预测人员姓名:</label>
+            <input type="text" id="predictPerson"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                required>
+        </div>
+        <!-- 最相似的用户数量 (k) 输入框 -->
+        <div class="mb-4">
+            <label for="k" class="block text-sm font-medium text-gray-700">最相似的用户数量 (k):</label>
+            <input type="number" id="k"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                min="1" required>
+        </div>
+        <!-- 预测按钮 -->
+        <button type="button" onclick="submitForm()"
+            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            预测
+        </button>
+    </form>
+    <!-- 推荐结果显示容器 -->
+    <div id="result" class="mt-4"></div>
+    <!-- 计算过程显示容器 -->
+    <div id="calculation" class="mt-4"></div>
+
+    <!-- 返回按钮 -->
+    <button type="button" onclick="goBackToAIclass()"
+        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mt-4">
+        返回互动课堂
+    </button>
+
+    <script>
+        // 生成评分表格的函数
+        function generateTable() {
+            // 获取样本人数和物品数量
+            const numPeople = parseInt(document.getElementById('numPeople').value);
+            const numItems = parseInt(document.getElementById('numItems').value);
+
+            // 检查输入是否有效
+            if (isNaN(numPeople) || isNaN(numItems) || numPeople < 1 || numItems < 1) {
+                alert('请输入有效的样本人数和物品数量');
+                return;
+            }
+
+            // 生成表格 HTML 代码
+            let tableHtml = '<table>';
+            tableHtml += '<tr><th></th>';
+            for (let i = 0; i < numPeople; i++) {
+                tableHtml += `<th><input type="text" placeholder="人员姓名" class="personNameInput"></th>`;
+            }
+            tableHtml += '</tr>';
+
+            for (let j = 0; j < numItems; j++) {
+                tableHtml += `<tr><td><input type="text" placeholder="物品名称" class="itemNameInput"></td>`;
+                for (let i = 0; i < numPeople; i++) {
+                    tableHtml += `<td><input type="number" class="ratingInput"></td>`;
+                }
+                tableHtml += '</tr>';
+            }
+            tableHtml += '</table>';
+
+            // 将表格 HTML 代码插入到页面中
+            document.getElementById('ratingTable').innerHTML = tableHtml;
+        }
+
+        // 提交表单的函数
+        function submitForm() {
+            // 获取样本人数、物品数量、推荐物品数量、预测人员姓名和最相似的用户数量 (k)
+            const numPeople = parseInt(document.getElementById('numPeople').value);
+            const numItems = parseInt(document.getElementById('numItems').value);
+            const numRecommendations = parseInt(document.getElementById('numRecommendations').value);
+            const predictPerson = document.getElementById('predictPerson').value;
+            const k = parseInt(document.getElementById('k').value);
+
+            // 检查输入是否有效
+            if (isNaN(numPeople) || isNaN(numItems) || isNaN(numRecommendations) || isNaN(k) || numPeople < 1 || numItems < 1 || numRecommendations < 1 || k < 1 || predictPerson === '') {
+                alert('请输入有效的样本人数、物品数量、推荐物品数量、最相似的用户数量 (k) 和预测人员姓名');
+                return;
+            }
+
+            // 获取人员姓名列表
+            const personNames = [];
+            const personNameInputs = document.querySelectorAll('.personNameInput');
+            for (let i = 0; i < numPeople; i++) {
+                const name = personNameInputs[i].value;
+                if (name === '') {
+                    alert('请输入所有人员的姓名');
+                    return;
+                }
+                personNames.push(name);
+            }
+
+            // 获取物品名称列表
+            const itemNames = [];
+            const itemNameInputs = document.querySelectorAll('.itemNameInput');
+            for (let j = 0; j < numItems; j++) {
+                const name = itemNameInputs[j].value;
+                if (name === '') {
+                    alert('请输入所有物品的名称');
+                    return;
+                }
+                itemNames.push(name);
+            }
+
+            // 获取评分矩阵
+            const ratings = [];
+            const ratingInputs = document.querySelectorAll('.ratingInput');
+            let index = 0;
+            for (let j = 0; j < numItems; j++) {
+                const rowRatings = [];
+                for (let i = 0; i < numPeople; i++) {
+                    const rating = ratingInputs[index].value;
+                    if (rating === '') {
+                        rowRatings.push(0);
+                    } else {
+                        const numRating = parseFloat(rating);
+                        if (isNaN(numRating)) {
+                            alert('请输入有效的评分');
+                            return;
+                        }
+                        rowRatings.push(numRating);
+                    }
+                    index++;
+                }
+                ratings.push(rowRatings);
+            }
+
+            // 构建请求数据
+            const data = {
+                numPeople,
+                personNames,
+                itemNames,
+                ratings,
+                numRecommendations,
+                predictPerson,
+                k
+            };
+
+            // 发送 POST 请求到服务器
+            fetch('http://127.0.0.1:5000/recommend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+              .then(response => {
+                    // 检查响应状态是否正常
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+              .then(result => {
+                    // 获取推荐结果和计算过程显示容器
+                    const resultDiv = document.getElementById('result');
+                    const calculationDiv = document.getElementById('calculation');
+                    if (result.error) {
+                        // 显示错误信息
+                        resultDiv.innerHTML = `<p>请求出错: ${result.error}</p>`;
+                        calculationDiv.innerHTML = '';
+                    } else {
+                        // 显示推荐结果
+                        resultDiv.innerHTML = `<p>为 ${predictPerson} 推荐的物品: ${result.recommendations.join(', ')}</p>`;
+                        let calculationHtml = '<p>计算过程:</p>';
+                        result.calculation_steps.forEach((step) => {
+                            // 处理计算步骤中的换行符和“用户”字样
+                            const sanitizedStep = step
+                              .replace(/用[\s\n]+户/g, '用户')
+                              .replace(/用户/g, '');
+                            calculationHtml += `<pre>${sanitizedStep}</pre>`;
+                        });
+                        // 显示计算过程
+                        calculationDiv.innerHTML = calculationHtml;
+                    }
+                })
+              .catch(error => {
+                    // 显示请求出错信息
+                    const resultDiv = document.getElementById('result');
+                    const calculationDiv = document.getElementById('calculation');
+                    resultDiv.innerHTML = `<p>请求出错: ${error.message}</p>`;
+                    calculationDiv.innerHTML = '';
+                });
+        }
+
+        // 返回互动课堂页面的函数
+        function goBackToAIclass() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+
+</html>
